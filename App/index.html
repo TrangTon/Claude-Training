@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lantern Stay – Book a room</title>
+  <style>
+    body { font-family: sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; }
+    label { display: block; margin-top: 12px; }
+    input, select, button { width: 100%; padding: 8px; margin-top: 4px; }
+    #error { color: #b00020; }
+    #result { font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Lantern Stay</h1>
+  <form id="booking">
+    <label for="checkin">Check-in</label>
+    <input id="checkin" type="date" required>
+    <label for="checkout">Check-out</label>
+    <input id="checkout" type="date" required>
+    <label for="guests">Guests</label>
+    <input id="guests" type="number" value="2">
+    <label for="room">Room</label>
+    <select id="room">
+      <option value="standard">Standard – 600,000 VND/night</option>
+      <option value="deluxe">Deluxe – 900,000 VND/night</option>
+    </select>
+    <button type="submit">Check price</button>
+  </form>
+  <p id="error" role="alert"></p>
+  <p id="result"></p>
+
+  <script>
+    const RATES = { standard: 600000, deluxe: 900000 };
+    document.getElementById('booking').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const error = document.getElementById('error');
+      const result = document.getElementById('result');
+      error.textContent = '';
+      result.textContent = '';
+      const inDate = new Date(document.getElementById('checkin').value);
+      const outDate = new Date(document.getElementById('checkout').value);
+      const guests = Number(document.getElementById('guests').value);
+      const nights = Math.round((outDate - inDate) / 86400000);
+      if (!(nights > 0)) { error.textContent = 'Check-out must be after check-in.'; return; }
+      if (guests > 6) { error.textContent = 'Guests must be between 1 and 6.'; return; }
+      const total = nights * RATES[document.getElementById('room').value];
+      result.textContent = nights + ' night(s) · Total ' + total.toLocaleString('en-US') + ' VND';
+    });
+  </script>
+</body>
+</html>
