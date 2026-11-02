@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lantern Stay – Book a room</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; }
+    label { display: block; margin-top: 14px; font-weight: 600; }
+    input, select { width: 100%; padding: 6px; margin-top: 4px; }
+    .error { color: #b00020; font-size: 0.9em; min-height: 1.2em; }
+    #price { margin-top: 18px; font-size: 1.1em; }
+    button { margin-top: 18px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h1>Lantern Stay</h1>
+  <p><em>Training demo – fictional homestay.</em></p>
+
+  <form id="booking-form" novalidate>
+    <label for="checkin">Check-in</label>
+    <input id="checkin" type="date">
+    <div class="error" id="checkin-error"></div>
+
+    <label for="checkout">Check-out</label>
+    <input id="checkout" type="date">
+    <div class="error" id="checkout-error"></div>
+
+    <label for="guest-count">Guests</label>
+    <input id="guest-count" type="text" inputmode="numeric">
+    <div class="error" id="guests-error"></div>
+
+    <label for="room-type">Room type</label>
+    <select id="room-type">
+      <option value="">Choose a room</option>
+      <option value="standard">Standard – 600,000 ₫ / night</option>
+      <option value="deluxe">Deluxe – 900,000 ₫ / night</option>
+    </select>
+
+    <div id="price" data-testid="price">Choose dates and room type to see the price</div>
+
+    <button type="submit">Book now</button>
+    <div id="result"></div>
+  </form>
+
+  <script>
+    const RATES = { standard: 600000, deluxe: 900000 };          // R4
+    const $ = (id) => document.getElementById(id);
+
+    // "Today" in Vietnam time (Asia/Ho_Chi_Minh), as YYYY-MM-DD
+    function todayVN() {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
+    }
+    function nightsBetween(a, b) {
+      return Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
+    }
+    function vnd(n) { return n.toLocaleString('en-US') + ' ₫'; }
+
+    function checkGuests() {
+      const v = $('guest-count').value.trim();
+      let msg = '';
+      if (v === '') msg = 'Number of guests is required';
+      else if (/^\d+\.\d+$/.test(v)) msg = 'Number of guests must be a whole number';
+      else if (!/^\d+$/.test(v) || +v < 1 || +v > 6) msg = 'Enter 1 to 6 guests';   // R1
+      $('guests-error').textContent = msg;
+      return msg === '';
+    }
+    function checkDates() {
+      const ci = $('checkin').value, co = $('checkout').value;
+      let ciMsg = '', coMsg = '';
+      if (ci && ci < todayVN()) ciMsg = 'Check-in must be today or later';           // R2
+      if (ci && co && co <= ci) coMsg = 'Check-out must be after check-in';          // R3
+      if (!ci || !co) coMsg = coMsg || 'Choose check-in and check-out dates';
+      $('checkin-error').textContent = ciMsg;
+      $('checkout-error').textContent = (ci || co) ? coMsg : '';
+      return !ciMsg && !coMsg;
+    }
+    function updatePrice() {
+      const datesOk = checkDates();
+      const room = $('room-type').value;
+      if (!datesOk || !room) {
+        $('price').textContent = 'Choose dates and room type to see the price';
+        return;
+      }
+      const n = nightsBetween($('checkin').value, $('checkout').value);
+      const rate = RATES[room];
+      $('price').textContent =
+        `${n} night${n > 1 ? 's' : ''} × ${vnd(rate)} = ${vnd(n * rate)}`;      // R4
+    }
+
+    $('checkin').min = todayVN();
+    $('guest-count').addEventListener('input', checkGuests);
+    ['checkin', 'checkout', 'room-type'].forEach(id => $(id).addEventListener('change', updatePrice));
+    $('booking-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const ok = [checkGuests(), checkDates(), !!$('room-type').value].every(Boolean);
+      $('result').textContent = ok ? 'Booking request sent!' : '';
+    });
+  </script>
+</body>
+</html>
